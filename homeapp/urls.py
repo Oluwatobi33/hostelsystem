@@ -7,7 +7,6 @@ from .views import BookingFormView
 
 
 urlpatterns = [
-
     path("", views.index, name='index'),
     path("signup/", views.signup, name='signup'),
     path("base/<int:pk>/", views.base, name='base'),
@@ -20,5 +19,6 @@ urlpatterns = [
     path('profile/<int:pk>/', views.ProfilePage, name='profile'),
     path('updateprofile/<int:pk>/', views.UpdateProfile, name='updateprofile'),
     path('book/', BookingFormView.as_view(), name='booking_form'),
+    path('updatebooking/<int:pk>/', views.UpdateBooking, name='updatebooking'),
 
 ]

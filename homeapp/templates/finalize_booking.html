@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Company Profile</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <form action="{% url 'update_booking' pk=request.session.id %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+                    <div class="card shadow-lg border-0 rounded-lg mt-5">
+                        <div class="card-header">
+                            <h3 class="text-center font-weight-light my-4">Update Company Profile</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3 mb-md-0">
+                                        <input class="form-control" id="inputFirstName" name="firstname" value="{{ cand.firstname }}" type="text" placeholder="Enter your first name" />
+                                        <label for="inputFirstName">First Name</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input class="form-control" id="inputLastName" name="lastname" type="text" value="{{ cand.lastname }}" placeholder="Enter your last name" />
+                                        <label for="inputLastName">Last Name</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input class="form-control" id="inputEmail" name="email" type="email" value="{{ user.email }}" placeholder="Enter Your Email" />
+                                <label for="inputEmail">Email address</label>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3 mb-md-0">
+                                        <input class="form-control" id="inputState" name="state" type="text" value="{{ cand.state }}" placeholder="Enter your state" />
+                                        <label for="inputState">State</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3 mb-md-0">
+                                        <input class="form-control" id="inputPhone" name="phone" type="tel" value="{{ cand.phone }}" placeholder="Enter your phone number" />
+                                        <label for="inputPhone">Phone</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6 my-4">
+                                    <div class="form-floating mb-3 mb-md-0">
+                                        <input class="form-control" id="inputArrival" type="date" name="arrival" value="{{ cand.arrival }}" placeholder="Arrival" />
+                                        <label for="inputArrival">Arrival</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3 mb-md-0">
+                                        <input class="form-control" id="inputDeparture" type="date" name="departure" value="{{ cand.departure }}" placeholder="Departure" />
+                                        <label for="inputDeparture">Departure</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="inputLogo">Company logo</label>
+                                    <div class="form-floating mb-3 mb-md-0">
+                                        <input type="file" class="form-control" id="inputLogo" name="logo_pic" placeholder="Company logo" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3 mb-md-0">
+                                        <label for="inputCity">City</label>
+                                        <input type="text" class="form-control" id="inputCity" name="city" value="{{ cand.city }}" placeholder="Enter Your City" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 mb-0">
+                                <button type="submit" class="d-grid btn btn-primary btn-block">Update Profile Account</button>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center py-3">
+                            <div class="small"><a href="login.html">Have an account? Go to login</a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>  
+</body>
+</html>

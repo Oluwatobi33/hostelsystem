@@ -1,5 +1,6 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render,get_object_or_404, redirect
 from .models import *
+from django.db import IntegrityError
 from django.utils import timezone
 from datetime import timedelta
 from django.core.exceptions import ObjectDoesNotExist
@@ -8,7 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.views import View
 from django.http import HttpResponse
 from datetime import datetime
-
+from django.contrib.auth.views import PasswordResetView
+from .forms import CustomPasswordResetForm
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +75,6 @@ def LoginUser(request):
 
 
 # views.py
-from django.contrib.auth.views import PasswordResetView
-from .forms import CustomPasswordResetForm
 
 class CustomPasswordResetView(PasswordResetView):
     form_class = CustomPasswordResetForm
@@ -158,34 +158,80 @@ def UpdateProfile(request, pk):
         return render(request, "profile.html", {"cand": cand, "user": cand.user_id})
     except ObjectDoesNotExist:
         return redirect('error')
-
-
-def BookingFormView(View):
-    user_id = request.session.get('id')
-
-    if not user_id:
-        return redirect('login')
     
+class BookingFormView(View):
+    def get(self, request, *args, **kwargs):
+        user_id = request.session.get('id')
 
+        if not user_id:
+            return redirect('login')
+
+        return render(request, 'booking_form.html')
 
     def post(self, request, *args, **kwargs):
+        user_id = request.session.get('id')
+
+        if not user_id:
+            return redirect('login')
+
         arrival = request.POST.get('arrival')
         departure = request.POST.get('departure')
-        
+
         if not arrival or not departure:
             return HttpResponse('Invalid input, please provide both arrival and departure dates.')
 
-            try:
-                check_in = datetime.strptime(arrival, "%Y-%m-%d")
-                check_out = datetime.strptime(departure, "%Y-%m-%d")
-            except ValueError:
-                return HttpResponse('Invalid date format, please use YYYY-MM-DD.')
+        try:
+            check_in = datetime.strptime(arrival, "%Y-%m-%d")
+            check_out = datetime.strptime(departure, "%Y-%m-%d")
+        except ValueError:
+            return HttpResponse('Invalid date format, please use YYYY-MM-DD.')
 
-            # Save data to session
-            request.session['check_in'] = check_in.strftime("%Y-%m-%d")
-            request.session['check_out'] = check_out.strftime("%Y-%m-%d")
+        total_charge = (check_out - check_in).days * 100  # Assume 100 per day
 
-            # Implement the logic for calculating the total charge
-            # and save to session or handle accordingly
-   
-        return redirect('h')
+        candidate = get_object_or_404(Candidate, user_id=user_id)
+
+        if Booking.objects.filter(email=candidate.email).exists():
+            return HttpResponse('A booking with this email already exists.')
+
+        try:
+            Booking.objects.create(
+                user_id=candidate,
+                firstname=candidate.firstname,
+                lastname=candidate.lastname,
+                email=candidate.email,
+                phone=candidate.phone,
+                address=candidate.address,
+                city=candidate.city,
+                state=candidate.state,
+                arrival=check_in,
+                departure=check_out,
+                total_charge=total_charge
+            )
+        except IntegrityError:
+            return HttpResponse('A booking with this email already exists.')
+
+        return redirect('h')  # Change 'h' to the appropriate URL name
+    
+def UpdateBooking(request, pk):
+    user = get_object_or_404(UserMaster, pk=pk)
+    if request.method == 'POST':
+        if user.role == 'Candidate':
+            cand = Candidate.objects.get(user=user)
+            cand.firstname = request.POST.get('firstname', cand.firstname)
+            cand.lastname = request.POST.get('lastname', cand.lastname)
+            cand.state = request.POST.get('state', cand.state)
+            cand.city = request.POST.get('city', cand.city)
+            cand.address = request.POST.get('address', cand.address)
+            cand.phone = request.POST.get('phone', cand.phone)
+            cand.arrival = request.POST.get('arrival', cand.arrival)
+            cand.departure = request.POST.get('departure', cand.departure)
+            
+            logo_pic = request.FILES.get('logo_pic')
+            if logo_pic:
+                cand.logo_pic = logo_pic
+            
+            cand.save()
+            return redirect('finalize_booking', pk=user.pk)
+    else:
+        cand = Candidate.objects.get(user=user)
+    return render(request, "profile.html", {'use': user, 'cand': cand})
