@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Booking Successful</h1>
+<p>Thank you for booking with us. Your booking details are as follows:</p>
+<p>Customer Name: {{ booking.customer_name }}</p>
+<p>Room: {{ booking.room }}</p>
+<p>Check-in Date: {{ booking.check_in_date }}</p>
+<p>Check-out Date: {{ booking.check_out_date }}</p>
+<p>Total Cost: {{ booking.total_cost }}</p>
+
+{% if booking.is_upgraded %}
+<p>Your room has been upgraded.</p>
+{% endif %}
+
+<a href="{% url 'upgrade_room' booking.id %}">Upgrade Room</a>
+
+</body>
+</html>

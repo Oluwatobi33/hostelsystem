@@ -67,7 +67,7 @@
                                  <a class="nav-link" href="about.html">About</a>
                               </li>
                               <li class="nav-item">
-                                 <a class="nav-link mx-4" href="room.html"> {{request.session.firstname}}    {{request.session.lastname}}</a>
+                                 <a class="nav-link mx-4"> {{request.session.firstname}}    {{request.session.lastname}}</a>
                               </li>
                               <li class="nav-item">
                                 <a class="nav-link" href="{% url 'signup' %}">register</a>
@@ -76,7 +76,7 @@
                                  <a class="nav-link" href="{% url 'login' %}">Login</a>
                               </li>
                               <li class="nav-item">
-                                 <a class="nav-link" href="{% url 'booking_form' %}">Book</a>
+                                 <a class="nav-link" href="{% url 'book_room' %}">Book</a>
                               </li>
                               <li class="nav-item">
                                  <a class="nav-link" href="contact.html">Contact Us</a>

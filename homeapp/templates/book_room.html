@@ -1,0 +1,116 @@
+<!-- {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Your Room</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <form action="{% url 'login'  %}" method="POST" enctype="multipart/form-data" class="login-form">
+        {% csrf_token %}
+        {% for message in messages %}
+        <div class="message text-center alert alert-info {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        <div class="form-header">
+            <center>
+                {% if msg %}
+                <h4 class="error-message">{{ msg }}</h4>
+                {% endif %}
+            </center>
+            <h1>Login Page</h1>
+            <hr>
+        </div>
+        <div class="form-group">
+            <label for="role"><b>Select Role <span>*</span></b></label>
+            <select name="role" id="role" required>
+                <option value="">====Room Type===</option>
+                <option value="1">Single</option>
+                <option value="2">Double</option>
+                <option value="2">Suite</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="email"><b>Email</b></label>
+            <input type="email" placeholder="Enter Email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password"><b>username</b></label>
+            <input type="password" placeholder="Enter username" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="password"><b>matric_no</b></label>
+            <input type="text" placeholder="Enter   matric_number" id="  matric_number" name="matric_number " required>
+        </div>
+        <div class="form-group">
+            <label for="password"><b>application_number</b></label>
+            <input type="text" placeholder="Enter application_number" id="application_number" name="application_number " required>
+        </div>
+        <div class="form-group">
+            <label for="role"><b>Select Role <span>*</span></b></label>
+            <select name="role" id="role" required>
+                <option value="">====User Type===</option>
+                <option value="Undergraduate">Undergraduate</option>
+                <option value="Postgraduate">Postgraduate</option>
+                <option value="Jupeb">Jupeb</option>
+                <option value="Topup">Topup</option>
+                <option value="Parent">Parent</option>
+                <option value="Staff">Staff</option>
+                <option value="Others">Others</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="role"><b>Select level <span>*</span></b></label>
+            <select name="role" id="role" required>
+                <option value="">====level Type===</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="300">300</option>
+                <option value="400">400</option>
+                <option value="Spill Over">Spill Over</option>
+                <option value="Jupeb">Jupeb</option>
+                <option value="Topup">Topup</option>
+                <option value="Others">Others</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="password"><b>Phone_number</b></label>
+            <input type="text" placeholder="Enter your Phone Number" id="phone_no" name="phone_no" required>
+        </div>
+        <div class="form-group">
+            <label for="password"><b>department</b></label>
+            <input type="text" placeholder="Enter your department" id="department" name="department" required>
+        </div>
+        <div class="form-group">
+            <label for="password"><b> programme</b></label>
+            <input type="text" placeholder="Enter your  programme" id=" programme" name="programme" required>
+        </div>
+        <div class="form-group form-check">
+            <input type="checkbox" id="remember" name="remember" checked>
+            <label for="remember">Remember me</label>
+        </div>
+        <p>By creating an account you agree to our <a href="#" class="link">Terms & Privacy</a>.</p>
+        <div class="form-group">
+            <button type="submit" class="submit-btn">Sign in</button>
+        </div>
+    </form>
+</body>
+</html> -->
+
+
+<form action="{% url 'book_room' %}" method="POST" enctype="multipart/form-data" class="booking-form">
+    {% csrf_token %}
+    {% for message in messages %}
+        <div class="message text-center alert alert-success {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    
+    {{ form.as_p }}  <!-- Auto-generate form fields from the form instance -->
+
+    <div class="form-group">
+        <button type="submit" class="submit-btn">Book Room</button>
+    </div>
+</form>
+

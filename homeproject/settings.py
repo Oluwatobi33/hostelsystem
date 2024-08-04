@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'homeapp.middleware.SessionExpiryMiddleware',  # Add your custom middleware here
 ]
 
 ROOT_URLCONF = 'homeproject.urls'
@@ -134,11 +135,16 @@ STATICFILES_DIRS = [
 
 # This is where the collected static files will go for production
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+PAYSTACK_SECRET_KEY = 'sk_test_1adfdda19b6ce3bd00224fc7b98344bb97884bfb'
+PAYSTACK_PUBLIC_KEY = 'pk_test_53afc15958244b65fb02e94f0d595da033084679'
 
 # settings.py
 LOGIN_URL = 'login'
-# settings.py
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Or your chosen backend
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Use database-backed sessions
+SESSION_COOKIE_AGE = 1209600  # Two weeks in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False 
+
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
