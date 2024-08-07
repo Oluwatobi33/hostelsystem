@@ -75,11 +75,9 @@
                                         <nav class="sb-sidenav-menu-nested nav">
                                             <!-- <a class="nav-link" href="login.html">Login</a> -->
                                             <li><a class="nav-link" href="{% url 'companyProfile' pk=request.session.id %}">Company Profile</a></li>
-                                            <a class="nav-link" href="{% url 'jobpostlist' %}">job post list</a>
-                                            <a class="nav-link" href="{% url 'job_detail_submit' %}">job post</a>
-                                            <a class="nav-link" href="{% url 'applyjoblist' %}">Applied job list</a>
-                                            <a class="nav-link" href="{% url 'userlist' %}">Adminuserlist</a> 
-                                            <a class="nav-link" href="{% url 'companylist' %}">companylist</a>  
+                                            <a class="nav-link" href="{% url 'roompostlist' %}">room post list</a>
+                                            <a class="nav-link" href="{% url 'post_room' %}">hotel post</a>
+                                            
                                         </nav>
                                     </div>
                                 </nav>

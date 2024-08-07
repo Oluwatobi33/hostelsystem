@@ -128,12 +128,12 @@
                                 <table id="datatablesSimple">
                                     <thead>
                                         <tr>
-                                            <th> Job Name</th>
-                                            <th>Company Name</th>
-                                            <th>Location</th>
-                                            <th>Company website</th>
-                                            <th>Experience</th>
-                                            <th>Salary Package</th>
+                                            <th>S/N</th>
+                                            <th>ROOM Type</th>
+                                            <th>ROOM Description</th>
+                                            <th>ROOM price</th>
+                                            <th>ROOM Company</th>
+                                            <th>Room status</th>
                                         </tr>
                                     </thead>
                 
@@ -141,12 +141,12 @@
                                     <tbody>
                                         {% for i in all_job %}
                                         <tr>
-                                            <td>{{i.jobname}}</td>
-                                            <td>{{i.companyname}}</td>
-                                            <td>{{i.location}}</td>
-                                            <td>{{i.salarypackage}}</td>
-                                            <td>{{i.experience}}</td>
-                                            <td>{{i.qualification }}</td>
+                                            <td>{{i.id}}</td>
+                                            <td>{{i.room_type}}</td>
+                                            <td>{{i.description}}</td>
+                                            <td>{{i.price}}</td>
+                                            <td>{{i.company}}</td>
+                                            <td>{{i.available}}</td>
                                         </tr>
                                     </tbody>
                                     {% endfor %}

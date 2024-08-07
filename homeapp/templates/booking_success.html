@@ -3,22 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Booking Receipt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #007bff;
+        }
+        .content {
+            font-size: 16px;
+            color: #333;
+        }
+        .content p {
+            margin: 10px 0;
+        }
+        .content .details {
+            margin-top: 20px;
+        }
+        .content .details p {
+            font-weight: bold;
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #28a745;
+        }
+        .button {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 10px;
+            text-align: center;
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .upgrade-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .upgrade-link:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>Booking Successful</h1>
-<p>Thank you for booking with us. Your booking details are as follows:</p>
-<p>Customer Name: {{ booking.customer_name }}</p>
-<p>Room: {{ booking.room }}</p>
-<p>Check-in Date: {{ booking.check_in_date }}</p>
-<p>Check-out Date: {{ booking.check_out_date }}</p>
-<p>Total Cost: {{ booking.total_cost }}</p>
+    <div class="container">
+        <div class="header">
+            <h1>Booking Successful</h1>
+        </div>
+        <div class="content">
+            <p>Thank you for booking with us. Your booking details are as follows:</p>
+            <div class="details">
+                <p>Customer Name: {{ booking.user.first_name }} {{ booking.user.last_name }}</p>
+                <p>Room: {{ booking.room.room_type }}</p>
+                <p>Check-in Date: {{ booking.start_date }}</p>
+                <p>Check-out Date: {{ booking.end_date }}</p>
+                <p>Total Cost: #{{ booking.room.price }}</p>
+            </div>
 
-{% if booking.is_upgraded %}
-<p>Your room has been upgraded.</p>
-{% endif %}
+            {% if booking.is_upgraded %}
+            <p class="status">Your room has been upgraded.</p>
+            {% endif %}
 
-<a href="{% url 'upgrade_room' booking.id %}">Upgrade Room</a>
+            <a href="{% url 'upgrade_room' booking.id %}" class="upgrade-link">Upgrade Room</a>
 
+            <form method="POST" action="{% url 'paystack_payment' booking.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="amount" value="{{ booking.room.price }}">
+                <input type="hidden" name="email" value="{{ booking.user.email }}">
+                <button type="submit" class="button">Pay Now</button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

@@ -1,11 +1,12 @@
-from django.shortcuts import render,get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import *
 from django.db import IntegrityError
 from django.utils import timezone
 from datetime import timedelta
 from django.core.exceptions import ObjectDoesNotExist
 import logging
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout as auth_logout
+# from django.contrib.auth.decorators import login_required
 from django.views import View
 from django.http import HttpResponse
 from datetime import datetime
@@ -18,12 +19,18 @@ from .models import Room, Booking
 from django.contrib import messages
 from .forms import BookingForm
 from django.contrib.auth.decorators import login_required
-
+from .models import Room, Company
+from .forms import RoomForm
 import paystackapi
 from paystackapi.transaction import Transaction
 
+
 def index(request):
     return render(request, "index.html")
+
+def index(request):
+    rooms = Room.objects.all()
+    return render(request, 'index.html', {'rooms': rooms})
  
 def base(request):
     return render(request, 'base.html')
@@ -55,7 +62,6 @@ def LoginUser(request):
                     request.session['firstname'] = can.firstname
                     request.session['lastname'] = can.lastname
                     request.session['email'] = user.email
-                    request.session['password'] = user.password  # Consider avoiding storing the password
                     request.session['is_created'] = timezone.now().isoformat()  # Track when the session was created
                     request.session.set_expiry(60)  # Session expires in 1 minute
 
@@ -69,9 +75,8 @@ def LoginUser(request):
                     request.session['firstname'] = comp.firstname
                     request.session['lastname'] = comp.lastname
                     request.session['email'] = user.email
-                    request.session['password'] = user.password  # Same consideration here
                     request.session['is_created'] = timezone.now().isoformat()  # Track when the session was created
-                    request.session.set_expiry(60)  # Session expires in 1 minute
+                    request.session.set_expiry(1000)  # Session expires in 1 minute
 
                     return redirect("dashboard")
 
@@ -92,7 +97,6 @@ def LoginUser(request):
 
 
 # views.py
-
 class CustomPasswordResetView(PasswordResetView):
     form_class = CustomPasswordResetForm
 
@@ -229,51 +233,53 @@ def UpdateProfile(request, pk):
 
 #         return redirect('h')  # Change 'h' to the appropriate URL name
 
-@login_required
-def book_room(request):
-    # Use the request.user to get the current logged-in user's information
-    user = request.user
+# def book_room(request):
+#     user_id = request.session.get('id')
+#     if not user_id:
+#         return redirect('login')
 
-    try:
-        candidate = Candidate.objects.get(user_id=user.id)
-    except ObjectDoesNotExist:
-        messages.error(request, "Candidate not found. Please contact support.")
-        return redirect('home')  # Redirect to home or an appropriate page
+#     try:
+#         candidate = Candidate.objects.get(user_id=user_id)
+#     except Candidate.DoesNotExist:
+#         messages.error(request, "Candidate not found. Please contact support.")
+#         return redirect('index')  # Redirect to home or an appropriate page
 
-    if request.method == 'POST':
-        form = BookingForm(request.POST)
+#     if request.method == 'POST':
+#         form = BookingForm(request.POST)
+#         if form.is_valid():
+#             booking = form.save(commit=False)  # Create an instance without saving
+#             booking.user_id = candidate  # Associate the booking with the candidate
+#             booking.save()  # Finally save the booking
+#             messages.success(request, 'Booking created successfully!')
+#             return redirect('paystack_payment', booking_id=booking.id)  # Redirect to a payment view
+#         else:
+#             messages.error(request, 'Please correct the error below.')
+#     else:
+#         form = BookingForm()
 
-        if form.is_valid():
-            booking = form.save(commit=False)  # Create an instance without saving
-            booking.user_id = candidate  # Associate the booking with the candidate
-            booking.save()  # Finally save the booking
-            messages.success(request, 'Booking created successfully!')
-            return redirect('paystack_payment', booking_id=booking.id)  # Redirect to a payment view
+#     return render(request, 'book_room.html', {'form': form})
 
-        else:
-            messages.error(request, 'Please correct the error below.')
-    else:
-        form = BookingForm()
 
-    return render(request, 'book_room.html', {'form': form})
+# def booking_success(request, booking_id):
+#     booking = get_object_or_404(Booking, id=booking_id)
+#     context = {
+#         'booking': booking
+#     }
+#     return render(request, 'booking_success.html', context)
 
-@login_required
 def booking_success(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     return render(request, 'booking_success.html', {'booking': booking})
 
-
-
-@login_required
 def paystack_payment(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
-    email = request.user.email  # Assuming the user has an email field
+    candidate = booking.user_id  # Assuming the foreign key to Candidate is called user_id
 
     # Initialize the Paystack transaction
     response = Transaction.initialize(
         reference=f"payment_{booking.id}",
         amount=int(booking.total_cost() * 100),  # Amount in kobo
-        email=email,
+        email=candidate.email,
     )
 
     if response['status']:
@@ -285,7 +291,7 @@ def paystack_payment(request, booking_id):
 
 
 
-@login_required
+
 def paystack_callback(request):
     reference = request.GET.get('reference')
     response = Transaction.verify(reference)
@@ -355,36 +361,275 @@ def dashboard(request):
     else:
         return redirect('login')
     
+# def UpdateCompanyProfilePage(request):
+    # Fetch the user ID from the session
+    user_id = request.session.get('id')
+    if not user_id:
+        return redirect('login')  # Redirect to login if user is not authenticated
+
+    try:
+        user = UserMaster.objects.get(id=user_id)
+    except UserMaster.DoesNotExist:
+        return redirect('login')  # Redirect to login if user is not found
+
+    if user.role != 'Company':
+        return redirect('login')  # Redirect to login if the user is not a company
+
+    if request.method == 'POST':
+        try:
+            comp = Company.objects.get(user_id=user)
+        except Company.DoesNotExist:
+            return redirect('login')  # Redirect to login if company details are not found
+
+        # Update company profile fields
+        comp.firstname = request.POST.get('firstname', comp.firstname)
+        comp.lastname = request.POST.get('lastname', comp.lastname)
+        comp.company_name = request.POST.get('company_name', comp.company_name)
+        comp.state = request.POST.get('state', comp.state)
+        comp.city = request.POST.get('city', comp.city)
+        comp.company_contact = request.POST.get('company_contact', comp.company_contact)
+        comp.company_website = request.POST.get('company_website', comp.company_website)
+        comp.description = request.POST.get('description', comp.description)
+        comp.telephone = request.POST.get('telephone', comp.telephone)
+        comp.address = request.POST.get('address', comp.address)
+        
+        if 'image' in request.FILES:
+            comp.logo_pic = request.FILES['image']
+            
+        comp.save()
+        return redirect('dashboard')  # Redirect to dashboard after saving
+    else:
+        try:
+            comp = Company.objects.get(user_id=user)
+        except Company.DoesNotExist:
+            return redirect('login')  # Redirect to login if company details are not found
+
+        return render(request, 'company/update_profile.html', {'use': user, 'comp': comp})
+
 
 def UpdateCompanyProfilePage(request, pk):
+    # Ensure the user is authenticated
+    if 'id' not in request.session:
+        return redirect('login')
+
+    try:
+        user = UserMaster.objects.get(pk=pk)
+    except UserMaster.DoesNotExist:
+        return redirect('login')  # Redirect to login if user is not found
+
+    if user.role != 'Company':
+        return redirect('login')  # Redirect to login if the user is not a company
+
     if request.method == 'POST':
-        user = UserMaster.objects.get(pk=pk)
-        if user.role == 'Company':
+        try:
             comp = Company.objects.get(user_id=user)
-            comp.firstname = request.POST.get('firstname', comp.firstname)
-            comp.lastname = request.POST.get('lastname', comp.lastname)
-            comp.company_name = request.POST.get('company_name', comp.company_name)
-            comp.state = request.POST.get('state', comp.state)
-            comp.city = request.POST.get('city', comp.city)
-            comp.company_contact  = request.POST.get('company_contact', comp.company_contact )
-            comp.description = request.POST.get('description', comp.description)
-            comp.telephone  = request.POST.get('telephone ', comp.telephone)
-            
-            if 'image' in request.FILES:
-                comp.logo_pic = request.FILES['image']
-                
-            comp.save()
-            return redirect('profile', pk=user.pk)
-    else:
-        user = UserMaster.objects.get(pk=pk)
-        comp = Company.objects.get(user_id=user)
-        return render(request, "profile.html", {'use': user, 'comp': comp})
+        except Company.DoesNotExist:
+            return redirect('login')  # Redirect to login if company details are not found
+
+        comp.firstname = request.POST.get('firstname', comp.firstname)
+        comp.lastname = request.POST.get('lastname', comp.lastname)
+        comp.email = request.POST.get('email', user.email)
+        comp.state = request.POST.get('state', comp.state)
+        comp.telephone = request.POST.get('telephone', comp.telephone)
+        comp.company_contact = request.POST.get('company_contact', comp.company_contact)
+        comp.address = request.POST.get('address', comp.address)
+        comp.city = request.POST.get('city', comp.city)
+        comp.description = request.POST.get('description', comp.description)
+
+        if 'logo_pic' in request.FILES:
+            comp.logo_pic = request.FILES['logo_pic']
+
+        comp.save()
+
+        messages.success(request, "Company profile updated successfully.")
+        return redirect('companyProfile', pk=user.pk)
+
+    comp = get_object_or_404(Company, user_id=user)
+    return render(request, 'company/companyProfile.html', {'user': user, 'comp': comp})
+
 
 def CompanyProfilePage(request,pk):
     user = UserMaster.objects.get(pk=pk)
     comp = Company.objects.get(user_id=user)
     return render(request, "./company/companyProfile.html", {'user': user, 'comp': comp})
 
-def JobListPage(request):
-    all_job = JobDetails.objects.all()
-    return render( request, 'company/jobpostlist.html', {'all_job':all_job})
+
+def RoomPostList(request):
+    all_job = Room.objects.all()
+    return render( request, 'company/roompostlist.html', {'all_job':all_job})
+
+def book_room(request):
+    rooms = Room.objects.all()
+    room = None
+    form = None
+
+    if 'room_id' in request.GET:
+        room = get_object_or_404(Room, pk=request.GET['room_id'])
+        form = BookingForm()
+
+    if request.method == 'POST' and 'room_id' in request.POST:
+        room = get_object_or_404(Room, pk=request.POST['room_id'])
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            booking = form.save(commit=False)
+            
+            # Check if the session contains the user id
+            user_id = request.session.get('id')
+            if user_id is None:
+                return redirect('login')  # Or any other appropriate action
+
+            # Retrieve the Candidate associated with the user_id
+            try:
+                booking.user = Candidate.objects.get(user_id=user_id)
+            except Candidate.DoesNotExist:
+                return redirect('login')  # Or any other appropriate action
+
+            booking.room = room
+            booking.save()
+            room.available = False
+            room.save()
+            # Redirect to the booking success page with the booking_id
+            return redirect('booking_success', booking_id=booking.id)
+
+    if request.GET.get('room_type'):
+        rooms = rooms.filter(room_type__icontains=request.GET['room_type'])
+
+    return render(request, 'book_room.html', {'rooms': rooms, 'room': room, 'form': form})
+
+
+
+# def book_room(request, room_id):
+#     room = get_object_or_404(Room, pk=room_id)
+#     if not room.available:
+#         return redirect('search_rooms')
+
+#     if request.method == 'POST':
+#         form = BookingForm(request.POST)
+#         if form.is_valid():
+#             booking = form.save(commit=False)
+#             booking.user = request.user
+#             booking.room = room
+#             booking.save()
+#             room.available = False
+#             room.save()
+#             return redirect('booking_success')
+#     else:
+#         form = BookingForm()
+
+#     return render(request, 'book_room.html', {'form': form, 'room': room})
+
+
+# def search_rooms(request):
+#     rooms = Room.objects.all()
+#     if request.GET:
+#         room_type = request.GET.get('room_type')
+#         if room_type:
+#             rooms = rooms.filter(room_type__icontains=room_type)
+
+#     return render(request, 'search_rooms.html', {'rooms': rooms})
+
+
+def post_room(request):
+    if request.method == "GET":
+        # Ensure the user is authenticated
+        if 'id' not in request.session:
+            return redirect('login')  # Redirect to login page if the user is not authenticated
+
+        # Get the logged-in user's company
+        user_id = request.session.get('id')
+        company = get_object_or_404(Company, user_id=user_id)
+        
+        # Pass the company information to the template
+        return render(request, 'company/post_room.html', {'company_name': company.company_name})
+
+    elif request.method == "POST":
+        room_type = request.POST.get('room_type')
+        description = request.POST.get('description')
+        price = request.POST.get('price')
+        available = 'available' in request.POST
+
+        # Ensure the user is authenticated
+        if 'id' not in request.session:
+            return redirect('login')  # Redirect to login page if the user is not authenticated
+
+        # Get the logged-in user's company
+        user_id = request.session.get('id')
+        company = get_object_or_404(Company, user_id=user_id)
+
+        # Create and save the room instance
+        try:
+            room = Room(
+                room_type=room_type,
+                description=description,
+                price=price,
+                company=company,
+                available=available
+            )
+            room.save()
+            message = "Room posted successfully!"
+            return render(request, 'company/post_room.html', {'company_name': company.company_name, 'message': message})
+        except Exception as e:
+            # Log the error or handle it appropriately
+            print(f"Error saving room: {e}")
+            return render(request, 'company/post_room.html', {
+                'company_name': company.company_name,
+                'error': 'An error occurred while saving the room.'
+            })
+
+# def post_room(request):
+#     if request.method == "GET":
+#         # Ensure the user is authenticated
+#         user_id = request.session.get('id')
+#         if not user_id:
+#             return redirect('login')  # Redirect to login page if the user is not authenticated
+
+#         # Get the logged-in user's company
+#         user = get_object_or_404(UserMaster, id=user_id)
+#         company = get_object_or_404(Company, user_id=user)
+        
+#         # Pass the company information to the template
+#         return render(request, 'company/post_room.html', {'company_name': company.company_name})
+
+#     elif request.method == "POST":
+#         room_type = request.POST.get('room_type')
+#         description = request.POST.get('description')
+#         price = request.POST.get('price')
+#         available = 'available' in request.POST
+
+#         # Ensure the user is authenticated
+#         user_id = request.session.get('id')
+#         if not user_id:
+#             return redirect('login')  # Redirect to login page if the user is not authenticated
+
+#         # Get the logged-in user's company
+#         user = get_object_or_404(UserMaster, id=user_id)
+#         company = get_object_or_404(Company, user_id=user)
+
+#         # Create and save the room instance
+#         try:
+#             room = Room(
+#                 room_type=room_type,
+#                 description=description,
+#                 price=price,
+#                 company=company,
+#                 available=available
+#             )
+#             room.save()
+#             message = "Room Posted successfully"
+#             return render(request, "company/post_room.html", {"msg": message})
+
+#             return redirect('dashboard')  # Redirect to a success page or another view
+#         except Exception as e:
+         
+#             # Log the error or handle it appropriately
+#             print(f"Error saving room: {e}")
+#             return render(request, 'company/post_room.html', {
+#                 'company_name': company.company_name,
+#                 'error': 'An error occurred while saving the room.'
+#             })
+
+
+
+def logout_user(request):
+    auth_logout(request)
+    return redirect('login')

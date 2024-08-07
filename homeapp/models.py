@@ -47,46 +47,24 @@ class Company(models.Model):
         return self.company_name
 
 class Room(models.Model):
-    USER_TYPE = (
-        ('Undergraduate', 'Undergraduate'),
-        ('Postgraduate', 'Postgraduate'),
-        ('Jupeb', 'Jupeb'),
-        ('Topup', 'Topup'),
-        ('Parent', 'Parent'),
-        ('Staff', 'Staff'),
-        ('Others', 'Others'),
-    )
-    LEVEL = (
-        ('100', '100'),
-        ('200', '200'),
-        ('300', '300'),
-        ('400', '400'),
-        ('Spill Over', 'Spill Over'),
-        ('Jupeb', 'Jupeb'),
-        ('Topup', 'Topup'),
-        ('Others', 'Others'),
-    )
-    GENDER = (
-        ('Male', 'Male'),
-        ('Female', 'Female'),
-    )
     ROOM_TYPE_CHOICES = [
-        ('1', 'Single'),
-        ('2', 'Double'),
-        ('3', 'Suite'),
+        ('Single', 'Single'),
+        ('Double', 'Double'),
+        ('Suite', 'Suite'),
     ]
-    room_type = models.CharField(max_length=2, choices=ROOM_TYPE_CHOICES)
-    username = models.CharField(max_length=100, db_index=True)
-    email = models.EmailField(max_length=200, unique=True, db_index=True)
-    matric_number = models.EmailField(max_length=200, unique=True, null=True, blank=True)
-    application_number = models.CharField(max_length=200, blank=True, null=True)
-    user_type = models.CharField(max_length=200, choices=USER_TYPE, blank=True, null=True)
-    gender = models.CharField(max_length=50, choices=GENDER, blank=True, null=True)
-    level = models.CharField(max_length=50, choices=LEVEL, blank=True, null=True)
-    phone_no = models.CharField(max_length=15, default="", blank=True, null=True)
-    department = models.CharField(max_length=200, blank=True, null=True)
-    programme = models.CharField(max_length=200, blank=True, null=True)
+    room_type = models.CharField(max_length=20, choices=ROOM_TYPE_CHOICES)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='rooms')
+    available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    room_pic = models.ImageField(upload_to='rooms/', null=True, blank=True)
 
+
+    def __str__(self):
+        return f"{self.room_type} by {self.company.company_name}"
+
+    
     is_active = models.BooleanField(default=False)
     is_student = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
@@ -95,29 +73,26 @@ class Room(models.Model):
     is_created = models.DateTimeField(auto_now_add=True)
     is_updated = models.DateTimeField(auto_now=True)
 
-    def get_room_type_display(self):
-        return dict(self.ROOM_TYPE_CHOICES).get(self.room_type, 'Unknown')
-
-
+    
 class Booking(models.Model):
-    user_id = models.ForeignKey(Candidate, on_delete=models.CASCADE)
-    email = models.EmailField(default=False)
-    username = models.CharField(max_length=255)
-    matric_number = models.CharField(max_length=100)
-    application_number = models.CharField(max_length=100)
-    level = models.CharField(max_length=50)
-    phone_no = models.CharField(max_length=15)
-    department = models.CharField(max_length=100)
-    programme = models.CharField(max_length=100)
-    user_type = models.CharField(max_length=50)  # Add if needed
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    user = models.ForeignKey(Candidate, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.username
+        return f"Booking by {self.user} for {self.room}"
+
+
+
 class Receipt(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
     amount = models.FloatField()
     transaction_reference = models.CharField(max_length=100)
     date_generated = models.DateTimeField(auto_now_add=True)
+
 
 class Payment(models.Model):
     amount = models.PositiveBigIntegerField()
@@ -126,8 +101,10 @@ class Payment(models.Model):
     session = models.CharField(max_length=200, null=True, blank=True)
     room_upgrade = models.BooleanField(default=False)
     ref = models.CharField(max_length=210)
-    user = models.ForeignKey('Candidate', on_delete=models.CASCADE, null=True, blank=True)  # Ensure 'Candidate' model exists
+    user = models.ForeignKey(Candidate, on_delete=models.CASCADE, null=True, blank=True)  # Ensure 'Candidate' model exists
     email = models.EmailField(max_length=200)
     verified = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, null=True, blank=True)
+
+

@@ -135,11 +135,18 @@ STATICFILES_DIRS = [
 
 # This is where the collected static files will go for production
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 PAYSTACK_SECRET_KEY = 'sk_test_1adfdda19b6ce3bd00224fc7b98344bb97884bfb'
 PAYSTACK_PUBLIC_KEY = 'pk_test_53afc15958244b65fb02e94f0d595da033084679'
 
-# settings.py
-LOGIN_URL = 'login'
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+LOGIN_REDIRECT_URL = '/dashboard/'
+
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Use database-backed sessions
 SESSION_COOKIE_AGE = 1209600  # Two weeks in seconds
