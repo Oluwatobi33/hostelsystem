@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 
 
 # Create your models here.
@@ -31,6 +32,7 @@ class Candidate(models.Model):
 
 class Company(models.Model):
     user_id = models.ForeignKey(UserMaster, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company_name = models.CharField(max_length=50)
     company_contact = models.CharField(max_length=50)
     company_website = models.URLField(max_length=200)
@@ -75,6 +77,7 @@ class Room(models.Model):
         ('2', 'Double'),
         ('3', 'Suite'),
     ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room_type = models.CharField(max_length=2, choices=ROOM_TYPE_CHOICES)
     username = models.CharField(max_length=100, db_index=True)
     email = models.EmailField(max_length=200, unique=True, db_index=True)
@@ -101,6 +104,7 @@ class Room(models.Model):
 
 class Booking(models.Model):
     user_id = models.ForeignKey(Candidate, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(default=False)
     username = models.CharField(max_length=255)
     matric_number = models.CharField(max_length=100)
@@ -114,12 +118,14 @@ class Booking(models.Model):
     def __str__(self):
         return self.username
 class Receipt(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
     amount = models.FloatField()
     transaction_reference = models.CharField(max_length=100)
     date_generated = models.DateTimeField(auto_now_add=True)
 
 class Payment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     amount = models.PositiveBigIntegerField()
     hostel_name = models.CharField(max_length=200, null=True, blank=True)
     room_type = models.CharField(max_length=200, null=True, blank=True)

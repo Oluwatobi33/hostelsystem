@@ -13,14 +13,15 @@ from django.contrib.auth.views import PasswordResetView
 from .forms import CustomPasswordResetForm
 from .models import *
 from .forms import BookingForm
-logger = logging.getLogger(__name__)
 from .models import Room, Booking
 from django.contrib import messages
 from .forms import BookingForm
 from django.contrib.auth.decorators import login_required
-
 import paystackapi
 from paystackapi.transaction import Transaction
+
+
+logger = logging.getLogger(__name__)
 
 def index(request):
     return render(request, "index.html")
