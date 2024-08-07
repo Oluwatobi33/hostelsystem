@@ -24,9 +24,12 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/updatecompanyprofile/<int:pk>/', views.UpdateCompanyProfilePage, name='updatecompanyprofile'),
     path('roompostlist/', views.RoomPostList, name='roompostlist'),
+    path('rooms/edit/<int:room_id>/', edit_room, name='edit_room'),
+    path('rooms/delete/<int:room_id>/', delete_room, name='delete_room'),
     path('dashboard/companyProfile/<int:pk>/', views.CompanyProfilePage, name='companyProfile'),
     path('dashboard/post_room', views.post_room, name='post_room'),
     path('book-room/', views.book_room, name='book_room'),
+    
     path('paystack_payment/<int:booking_id>/', views.paystack_payment, name='paystack_payment'),
     path('paystack-callback/', paystack_callback, name='paystack_callback'),
 ]

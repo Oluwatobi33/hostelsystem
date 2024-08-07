@@ -85,6 +85,10 @@ class Booking(models.Model):
     def __str__(self):
         return f"Booking by {self.user} for {self.room}"
 
+    def total_cost(self):
+        return self.price  # Or any logic to calculate the total cost
+
+
 
 
 class Receipt(models.Model):

@@ -290,8 +290,6 @@ def paystack_payment(request, booking_id):
         return redirect('book_room')
 
 
-
-
 def paystack_callback(request):
     reference = request.GET.get('reference')
     response = Transaction.verify(reference)
@@ -299,13 +297,13 @@ def paystack_callback(request):
     if response['status']:
         booking_id = response['data']['metadata']['booking_id']
         booking = get_object_or_404(Booking, id=booking_id)
-        booking.is_paid = True  # Assuming you have an is_paid field in Booking
+        booking.is_paid = True  # Mark the booking as paid
         booking.save()
 
         # Generate and save the receipt
         receipt = Receipt(
             booking=booking,
-            amount=booking.total_cost(),
+            amount=booking.total_cost(),  # Call the total_cost method
             transaction_reference=reference,
         )
         receipt.save()
@@ -315,6 +313,7 @@ def paystack_callback(request):
     else:
         messages.error(request, 'Payment verification failed.')
         return redirect('book_room')
+    
 
 
 @login_required
@@ -456,7 +455,29 @@ def CompanyProfilePage(request,pk):
 
 def RoomPostList(request):
     all_job = Room.objects.all()
-    return render( request, 'company/roompostlist.html', {'all_job':all_job})
+    return render( request, 'company/roompostlist.html', {'all_rooms':all_job})
+
+def delete_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+    room.delete()
+    messages.success(request, 'Room deleted successfully.')
+    return redirect('roompostlist')
+
+
+
+def edit_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+
+    if request.method == "POST":
+        form = RoomForm(request.POST, request.FILES, instance=room)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Room updated successfully.')
+            return redirect('roompostlist')
+    else:
+        form = RoomForm(instance=room)
+    
+    return render(request, 'company/edit_room.html', {'form': form, 'room': room})
 
 def book_room(request):
     rooms = Room.objects.all()
@@ -547,6 +568,7 @@ def post_room(request):
         description = request.POST.get('description')
         price = request.POST.get('price')
         available = 'available' in request.POST
+        room_pic = request.FILES.get('room_pic')  # Get the uploaded image file
 
         # Ensure the user is authenticated
         if 'id' not in request.session:
@@ -563,7 +585,8 @@ def post_room(request):
                 description=description,
                 price=price,
                 company=company,
-                available=available
+                available=available,
+                room_pic=room_pic  # Save the image file
             )
             room.save()
             message = "Room posted successfully!"

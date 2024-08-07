@@ -13,6 +13,14 @@ class RoomForm(forms.ModelForm):
     class Meta:
         model = Room
         fields = ['room_type', 'description', 'price']
+
+
+class RoomForm(forms.ModelForm):
+    class Meta:
+        model = Room
+        fields = ['room_type', 'description', 'price', 'available', 'room_pic']
+
+
 class BookingForm(forms.ModelForm):
     start_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}))
     end_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}))
