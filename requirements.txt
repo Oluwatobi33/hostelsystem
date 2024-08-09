@@ -70,12 +70,14 @@ defusedxml @ file:///tmp/build/80754af9/defusedxml_1615228127516/work
 Deprecated==1.2.14
 diff-match-patch @ file:///Users/ktietz/demo/mc3/conda-bld/diff-match-patch_1630511840874/work
 distributed @ file:///tmp/build/80754af9/distributed_1635956221111/work
-dj-database-url==2.2.0
-Django==4.2.13
+Django==4.2.14
+django-allauth==0.63.6
 django-auto-logout==0.5.1
 django-cors-headers==4.4.0
 django-crispy-forms==2.1
+django-environ==0.11.2
 django-graphql-jwt==0.4.0
+django-heroku==0.3.1
 django-mathfilters==1.0.0
 django-qr-code==4.0.1
 django-ranged-response==0.2.0
@@ -190,8 +192,7 @@ path @ file:///tmp/build/80754af9/path_1623603407737/work
 pathlib2 @ file:///tmp/build/80754af9/pathlib2_1625585682511/work
 pathspec==0.7.0
 patsy==0.5.2
-paystack==1.5.0
-paystackapi==2.1.1
+paystackapi==2.1.2
 pep8==1.7.1
 pexpect @ file:///tmp/build/80754af9/pexpect_1605563209008/work
 pickleshare @ file:///tmp/build/80754af9/pickleshare_1606932040724/work
@@ -225,7 +226,6 @@ pylint @ file:///tmp/build/80754af9/pylint_1627536788603/work
 pyls-spyder==0.4.0
 pymongo==4.7.2
 PyMySQL==1.1.1
-pyodbc===4.0.0-unsupported
 pyOpenSSL @ file:///tmp/build/80754af9/pyopenssl_1635333100036/work
 pyparsing @ file:///tmp/build/80754af9/pyparsing_1635766073266/work
 pypdf==4.2.0
@@ -237,6 +237,7 @@ python-bidi==0.4.2
 python-dateutil @ file:///tmp/build/80754af9/python-dateutil_1626374649649/work
 python-decouple==3.8
 python-dotenv==1.0.1
+python-http-client==3.3.7
 python-lsp-black @ file:///tmp/build/80754af9/python-lsp-black_1634232156041/work
 python-lsp-jsonrpc==1.0.0
 python-lsp-server==1.2.4
@@ -267,6 +268,7 @@ seaborn @ file:///tmp/build/80754af9/seaborn_1629307859561/work
 SecretStorage @ file:///tmp/build/80754af9/secretstorage_1614022780358/work
 segno==1.6.1
 Send2Trash @ file:///tmp/build/80754af9/send2trash_1632406701022/work
+sendgrid==6.11.0
 simplegeneric==0.8.1
 simplejson==3.19.2
 singledispatch @ file:///tmp/build/80754af9/singledispatch_1629321204894/work
@@ -289,7 +291,9 @@ spyder @ file:///tmp/build/80754af9/spyder_1636479868270/work
 spyder-kernels @ file:///tmp/build/80754af9/spyder-kernels_1634236920897/work
 SQLAlchemy @ file:///tmp/build/80754af9/sqlalchemy_1626947882125/work
 sqlparse==0.5.0
+starkbank-ecdsa==2.2.0
 statsmodels @ file:///tmp/build/80754af9/statsmodels_1614022848006/work
+stripe==10.5.0
 svglib==1.5.1
 sympy @ file:///tmp/build/80754af9/sympy_1635237064765/work
 tables @ file:///tmp/build/80754af9/pytables_1607975397488/work
