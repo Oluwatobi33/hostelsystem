@@ -6,20 +6,58 @@
     <title>Document</title>
 </head>
 <body>
-    <form method="POST" action="{% url 'paystack_payment' %}">
+    <form id="paymentForm" method="POST">
         {% csrf_token %}
-        <label for="email">Email</label>
-        <input type="email" name="email" required>
-
-        <label for="email">Customer Name</label>
-        <input type="email" name="email" required>
-        <label for="email">Room Type</label>
-        <input type="email" name=" room " required>
-        <label for="amount">Amount</label>
-        <input type="number" name="amount" required>
-    
-        <button type="submit">Pay Now</button>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" value="{{ candidate.email }}" required readonly>
+        
+        <label for="name">Customer Name:</label>
+        <input type="text" id="name" name="name" value="{{ candidate.first_name }} {{ candidate.last_name }}" required readonly>
+        
+        <label for="room">Room Type:</label>
+        <input type="text" id="room" name="room" value="{{ booking.room.room_type }}" required readonly>
+        
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" name="amount" value="{{ booking.total_cost }}" required readonly>
+        
+        <button type="button" onclick="payWithPaystack()">Pay Now</button>
     </form>
+    <script>
+        function payWithPaystack() {
+            var handler = PaystackPop.setup({
+                key: 'pk_test_53afc15958244b65fb02e94f0d595da033084679',  // Your public key
+                email: document.getElementById('email').value,
+                amount: document.getElementById('amount').value * 100, // Convert amount to kobo
+                currency: 'NGN',
+                callback: function(response) {
+                    // Handle the response from Paystack
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = "{% url 'paystack_payment' booking.id %}";
+                    
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'reference';
+                    input.value = response.reference;
+                    form.appendChild(input);
+                    
+                    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    var csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                },
+                onClose: function() {
+                    alert('Transaction was not completed.');
+                }
+            });
+            handler.openIframe();
+        }
+    </script>
     
 </body>
 </html>

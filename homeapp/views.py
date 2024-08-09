@@ -22,6 +22,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Room, Company
 from .forms import RoomForm
 import paystackapi
+
 from paystackapi.transaction import Transaction
 
 
@@ -180,140 +181,109 @@ def UpdateProfile(request, pk):
     except ObjectDoesNotExist:
         return redirect('error')
     
-# class BookingFormView(View):
-#     def get(self, request, *args, **kwargs):
-#         user_id = request.session.get('id')
-
-#         if not user_id:
-#             return redirect('login')
-
-#         return render(request, 'booking_form.html')
-
-#     def post(self, request, *args, **kwargs):
-#         user_id = request.session.get('id')
-
-#         if not user_id:
-#             return redirect('login')
-
-#         arrival = request.POST.get('arrival')
-#         departure = request.POST.get('departure')
-
-#         if not arrival or not departure:
-#             return HttpResponse('Invalid input, please provide both arrival and departure dates.')
-
-#         try:
-#             check_in = datetime.strptime(arrival, "%Y-%m-%d")
-#             check_out = datetime.strptime(departure, "%Y-%m-%d")
-#         except ValueError:
-#             return HttpResponse('Invalid date format, please use YYYY-MM-DD.')
-
-#         total_charge = (check_out - check_in).days * 100  # Assume 100 per day
-
-#         candidate = get_object_or_404(Candidate, user_id=user_id)
-
-#         if Booking.objects.filter(email=candidate.email).exists():
-#             return HttpResponse('A booking with this email already exists.')
-
-#         try:
-#             Booking.objects.create(
-#                 user_id=candidate,
-#                 firstname=candidate.firstname,
-#                 lastname=candidate.lastname,
-#                 email=candidate.email,
-#                 phone=candidate.phone,
-#                 address=candidate.address,
-#                 city=candidate.city,
-#                 state=candidate.state,
-#                 arrival=check_in,
-#                 departure=check_out,
-#                 total_charge=total_charge
-#             )
-#         except IntegrityError:
-#             return HttpResponse('A booking with this email already exists.')
-
-#         return redirect('h')  # Change 'h' to the appropriate URL name
-
-# def book_room(request):
-#     user_id = request.session.get('id')
-#     if not user_id:
-#         return redirect('login')
-
-#     try:
-#         candidate = Candidate.objects.get(user_id=user_id)
-#     except Candidate.DoesNotExist:
-#         messages.error(request, "Candidate not found. Please contact support.")
-#         return redirect('index')  # Redirect to home or an appropriate page
-
-#     if request.method == 'POST':
-#         form = BookingForm(request.POST)
-#         if form.is_valid():
-#             booking = form.save(commit=False)  # Create an instance without saving
-#             booking.user_id = candidate  # Associate the booking with the candidate
-#             booking.save()  # Finally save the booking
-#             messages.success(request, 'Booking created successfully!')
-#             return redirect('paystack_payment', booking_id=booking.id)  # Redirect to a payment view
-#         else:
-#             messages.error(request, 'Please correct the error below.')
-#     else:
-#         form = BookingForm()
-
-#     return render(request, 'book_room.html', {'form': form})
-
-
-# def booking_success(request, booking_id):
-#     booking = get_object_or_404(Booking, id=booking_id)
-#     context = {
-#         'booking': booking
-#     }
-#     return render(request, 'booking_success.html', context)
-
 def booking_success(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     return render(request, 'booking_success.html', {'booking': booking})
 
+from .models import Booking, Payment
+import json
+
+
+def paystack_payment(request, booking_id):
+    if request.method == 'POST':
+        reference = request.POST.get('reference')
+        payment = get_object_or_404(Payment, ref=reference)
+        
+        if payment.verify_payment():  # Verify and update the payment status
+            # Handle successful payment, e.g., updating booking status
+            return redirect('payment_success')  # Redirect to a success page
+        else:
+            return redirect('payment_failed')  # Redirect to a failure page
+    return redirect('some_error_page')
+
+
 def paystack_payment(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
-    candidate = booking.user_id  # Assuming the foreign key to Candidate is called user_id
+    candidate = booking.user
+    ref = f"payment_{booking.id}"
 
-    # Initialize the Paystack transaction
-    response = Transaction.initialize(
-        reference=f"payment_{booking.id}",
-        amount=int(booking.total_cost() * 100),  # Amount in kobo
-        email=candidate.email,
-    )
+    if request.method == 'POST':
+        try:
+            amount = int(booking.total_cost * 100)  # Convert to kobo
+            email = candidate.email
 
-    if response['status']:
-        authorization_url = response['data']['authorization_url']
-        return redirect(authorization_url)
-    else:
-        messages.error(request, 'Payment initialization failed.')
+            # Initialize Paystack transaction
+            transaction = Transaction.initialize(
+                reference=ref,
+                amount=amount,
+                email=email,
+                callback_url=request.build_absolute_uri('/payment/callback/')
+            )
+
+            response = json.loads(transaction)
+            if response['status']:
+                authorization_url = response['data']['authorization_url']
+                
+                # Create or update payment record
+                Payment.objects.update_or_create(
+                    ref=ref,
+                    defaults={
+                        'amount': amount,
+                        'email': email,
+                        'room': booking.room,
+                        'user': candidate,
+                        'verified': False,
+                    }
+                )
+
+                return redirect()
+            else:
+                messages.error(request, 'Payment initialization failed. Please try again.')
+                return redirect('book_room')
+
+        except Exception as e:
+            messages.error(request, f'An error occurred: {str(e)}')
+            return redirect('book_room')
+
+    return redirect('book_room')
+
+
+def payment_receipt(request):
+    return render(request, "payment_receipt.html")
+
+def payment_callback(request):
+    ref = request.GET.get('reference')
+
+    if not ref:
+        messages.error(request, 'Invalid payment reference.')
         return redirect('book_room')
 
+    payment = get_object_or_404(Payment, ref=ref)
 
-def paystack_callback(request):
-    reference = request.GET.get('reference')
-    response = Transaction.verify(reference)
-    
-    if response['status']:
-        booking_id = response['data']['metadata']['booking_id']
-        booking = get_object_or_404(Booking, id=booking_id)
-        booking.is_paid = True  # Mark the booking as paid
-        booking.save()
+    try:
+        response = Transaction.verify(reference=ref)
+        if response['status'] and response['data']['status'] == 'success':
+            if payment.amountBy100() == response['data']['amount']:
+                payment.verified = True
+                payment.save()
 
-        # Generate and save the receipt
-        receipt = Receipt(
-            booking=booking,
-            amount=booking.total_cost(),  # Call the total_cost method
-            transaction_reference=reference,
-        )
-        receipt.save()
+                # Generate a receipt
+                Receipt.objects.create(
+                    booking=payment.booking,
+                    amount=payment.amount / 100,  # Amount in Naira
+                    transaction_reference=ref
+                )
 
-        messages.success(request, 'Payment successful and receipt generated.')
-        return redirect('booking_success', booking_id=booking.id)
-    else:
-        messages.error(request, 'Payment verification failed.')
-        return redirect('book_room')
-    
+                messages.success(request, 'Payment successful and receipt generated.')
+            else:
+                messages.error(request, 'Payment amount mismatch.')
+        else:
+            messages.error(request, 'Payment verification failed.')
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+
+    return redirect('payment_receipt', booking_id=payment.booking.id)
+
 
 
 @login_required
@@ -457,12 +427,19 @@ def RoomPostList(request):
     all_job = Room.objects.all()
     return render( request, 'company/roompostlist.html', {'all_rooms':all_job})
 
-def delete_room(request, room_id):
-    room = get_object_or_404(Room, id=room_id)
-    room.delete()
-    messages.success(request, 'Room deleted successfully.')
-    return redirect('roompostlist')
 
+
+def delete_room(request, room_id):
+    # Fetch the Room object or return a 404 error if not found
+    room = get_object_or_404(Room, id=room_id)
+    
+    if request.method == 'POST':
+        room.delete()
+        messages.success(request, 'Room deleted successfully.')
+        return redirect('roompostlist')  # Redirect to a page listing rooms
+    
+    # If the request method is GET, render the confirmation form
+    return render(request, 'company/delete_room.html', {'room': room})
 
 
 def edit_room(request, room_id):
@@ -517,39 +494,6 @@ def book_room(request):
 
     return render(request, 'book_room.html', {'rooms': rooms, 'room': room, 'form': form})
 
-
-
-# def book_room(request, room_id):
-#     room = get_object_or_404(Room, pk=room_id)
-#     if not room.available:
-#         return redirect('search_rooms')
-
-#     if request.method == 'POST':
-#         form = BookingForm(request.POST)
-#         if form.is_valid():
-#             booking = form.save(commit=False)
-#             booking.user = request.user
-#             booking.room = room
-#             booking.save()
-#             room.available = False
-#             room.save()
-#             return redirect('booking_success')
-#     else:
-#         form = BookingForm()
-
-#     return render(request, 'book_room.html', {'form': form, 'room': room})
-
-
-# def search_rooms(request):
-#     rooms = Room.objects.all()
-#     if request.GET:
-#         room_type = request.GET.get('room_type')
-#         if room_type:
-#             rooms = rooms.filter(room_type__icontains=room_type)
-
-#     return render(request, 'search_rooms.html', {'rooms': rooms})
-
-
 def post_room(request):
     if request.method == "GET":
         # Ensure the user is authenticated
@@ -591,6 +535,7 @@ def post_room(request):
             room.save()
             message = "Room posted successfully!"
             return render(request, 'company/post_room.html', {'company_name': company.company_name, 'message': message})
+            return redirect('dashboard')
         except Exception as e:
             # Log the error or handle it appropriately
             print(f"Error saving room: {e}")
@@ -598,58 +543,6 @@ def post_room(request):
                 'company_name': company.company_name,
                 'error': 'An error occurred while saving the room.'
             })
-
-# def post_room(request):
-#     if request.method == "GET":
-#         # Ensure the user is authenticated
-#         user_id = request.session.get('id')
-#         if not user_id:
-#             return redirect('login')  # Redirect to login page if the user is not authenticated
-
-#         # Get the logged-in user's company
-#         user = get_object_or_404(UserMaster, id=user_id)
-#         company = get_object_or_404(Company, user_id=user)
-        
-#         # Pass the company information to the template
-#         return render(request, 'company/post_room.html', {'company_name': company.company_name})
-
-#     elif request.method == "POST":
-#         room_type = request.POST.get('room_type')
-#         description = request.POST.get('description')
-#         price = request.POST.get('price')
-#         available = 'available' in request.POST
-
-#         # Ensure the user is authenticated
-#         user_id = request.session.get('id')
-#         if not user_id:
-#             return redirect('login')  # Redirect to login page if the user is not authenticated
-
-#         # Get the logged-in user's company
-#         user = get_object_or_404(UserMaster, id=user_id)
-#         company = get_object_or_404(Company, user_id=user)
-
-#         # Create and save the room instance
-#         try:
-#             room = Room(
-#                 room_type=room_type,
-#                 description=description,
-#                 price=price,
-#                 company=company,
-#                 available=available
-#             )
-#             room.save()
-#             message = "Room Posted successfully"
-#             return render(request, "company/post_room.html", {"msg": message})
-
-#             return redirect('dashboard')  # Redirect to a success page or another view
-#         except Exception as e:
-         
-#             # Log the error or handle it appropriately
-#             print(f"Error saving room: {e}")
-#             return render(request, 'company/post_room.html', {
-#                 'company_name': company.company_name,
-#                 'error': 'An error occurred while saving the room.'
-#             })
 
 
 

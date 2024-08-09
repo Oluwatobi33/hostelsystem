@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Room</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Delete Room</h1>
+        {% if messages %}
+            <div class="alert alert-success" role="alert">
+                {{ messages }}
+            </div>
+        {% endif %}
+        <p>Are you sure you want to delete the room "{{ room }}"?</p>
+        <form method="POST" action="{% url 'delete_room' room.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Confirm Delete</button>
+            <a href="{% url 'roompostlist' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</body>
+</html>

@@ -29,7 +29,13 @@ urlpatterns = [
     path('dashboard/companyProfile/<int:pk>/', views.CompanyProfilePage, name='companyProfile'),
     path('dashboard/post_room', views.post_room, name='post_room'),
     path('book-room/', views.book_room, name='book_room'),
-    
-    path('paystack_payment/<int:booking_id>/', views.paystack_payment, name='paystack_payment'),
-    path('paystack-callback/', paystack_callback, name='paystack_callback'),
+    path('payment_receipt/', views.payment_receipt, name='payment_receipt'),
+    path('paystack_payment/<int:booking_id>/', paystack_payment, name='paystack_payment'),
+
+    path('paystack_callback/', views.payment_callback, name='paystack_callback'),
+    path('booking-success/<int:booking_id>/', views.booking_success, name='booking_success'),
 ]
+
+
+
+

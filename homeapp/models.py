@@ -98,17 +98,37 @@ class Receipt(models.Model):
     date_generated = models.DateTimeField(auto_now_add=True)
 
 
+import random
+
 class Payment(models.Model):
     amount = models.PositiveBigIntegerField()
-    hostel_name = models.CharField(max_length=200, null=True, blank=True)
-    room_type = models.CharField(max_length=200, null=True, blank=True)
-    session = models.CharField(max_length=200, null=True, blank=True)
+    room_type = models.ForeignKey(Room, on_delete=models.CASCADE, null=True, blank=True)
     room_upgrade = models.BooleanField(default=False)
-    ref = models.CharField(max_length=210)
-    user = models.ForeignKey(Candidate, on_delete=models.CASCADE, null=True, blank=True)  # Ensure 'Candidate' model exists
+    ref = models.CharField(max_length=210, unique=True)  # Ensure the ref is unique
+    user = models.ForeignKey(Candidate, on_delete=models.CASCADE, null=True, blank=True)
     email = models.EmailField(max_length=200)
     verified = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self) -> str:
+        return str(self.amount)
+
+    def save(self, *args, **kwargs):
+        if not self.ref:
+            while True:
+                randint = str(random.randint(100000000, 999999999))
+                ref = 'ACCOM' + randint
+                if not Payment.objects.filter(ref=ref).exists():
+                    self.ref = ref
+                    break
+        super().save(*args, **kwargs)
+
+    def amountBy100(self):
+        return (self.amount + 300) * 100
+
+    def verify_payment(self):
+        # Add the actual Paystack verification logic
+        pass
 
 
+ 
